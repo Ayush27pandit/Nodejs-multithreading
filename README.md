@@ -1,4 +1,4 @@
-# backend-must
+# Learning Nodejs multi-threading through Image processing
 
 To install dependencies:
 
