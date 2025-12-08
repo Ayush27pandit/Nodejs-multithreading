@@ -1,18 +1,15 @@
-//Normal image processing without worker
+import { parentPort, threadId } from "node:worker_threads";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdir, readdir } from "node:fs/promises";
 import { Jimp } from "jimp";
-import type ts from "typescript";
-import { performance } from "node:perf_hooks";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const OUTPUT_DIR = path.join(__dirname, "normal-output");
+const OUTPUT_DIR = path.join(__dirname, "worker-output");
 const INPUT_DIR = path.join(__dirname, "assets");
-
 async function ProcessImage(imagePath: string, filename: string) {
   try {
+    console.log("\nWorker started on Thread ID:", threadId);
     const subDirPath = path.join(
       OUTPUT_DIR,
       filename.split(".")[0] ?? filename
@@ -32,7 +29,6 @@ async function ProcessImage(imagePath: string, filename: string) {
             `resized-${filename}`
           ) as string;
           await cloned.write(outputPath);
-          console.log(`Resized ${filename} successfully.`);
         },
       },
 
@@ -46,7 +42,6 @@ async function ProcessImage(imagePath: string, filename: string) {
             `medium-resized-${filename}`
           ) as string;
           await cloned.write(outputPath);
-          console.log(`medium Resized ${filename} successfully.`);
         },
       },
 
@@ -60,7 +55,6 @@ async function ProcessImage(imagePath: string, filename: string) {
             `blurred-${filename}`
           ) as string;
           await cloned.write(outputPath);
-          console.log(`Blurred ${filename} successfully.`);
         },
       },
       {
@@ -73,46 +67,60 @@ async function ProcessImage(imagePath: string, filename: string) {
             `greyscale-${filename}`
           ) as string;
           await cloned.write(outputPath);
-          console.log(`Greyscaled ${filename} successfully.`);
         },
       },
     ];
 
     for (const { name, operation } of task) {
       await operation();
+
+      console.log(
+        `Worker thread ${threadId} processed ---> ${name} processed successfully.`
+      );
     }
-  } catch (error) {
-    console.error(`Error processing ${filename}.`, error);
-    throw error;
+    return { filename, status: "done", threadId };
+  } catch (err) {
+    return {
+      filename,
+      status: "error",
+      threadId,
+      error: (err as Error).message,
+    };
   }
 }
 
-async function main() {
-  try {
-    const start = performance.now();
-    const files = await readdir(INPUT_DIR);
-
-    //filtering the image files only
-    const imgFiles = files.filter((file) =>
-      /\.(jpg|png|jpeg|webp)$/i.test(file)
-    );
-
-    for (const file of imgFiles) {
-      const filePath = path.join(__dirname, "assets", file);
-      await ProcessImage(filePath, file);
-      console.log(`Image ${file} is processed successfully.`);
-    }
-
-    const end = performance.now();
-    const timeTaken = (end - start) / 1000;
-
-    console.log(
-      `---------------\nProcessing time without worker : ${timeTaken} s`
-    );
-  } catch (error) {
-    console.error("Main execution failed.", error);
-    process.exit(1);
+parentPort?.on("message", async ({ imagePath, filename }) => {
+  console.log("Worker received data: ", { imagePath, filename });
+  // Safety: skip non-image files
+  if (!/\.(jpg|jpeg|png|webp)$/i.test(filename)) {
+    parentPort?.postMessage({
+      filename,
+      status: "skipped",
+      reason: "Not an image",
+      threadId,
+    });
+    return;
   }
-}
+  const result = await ProcessImage(imagePath, filename);
+  parentPort?.postMessage(result);
+});
 
-main();
+//Fibonacci example with thread id
+// import { parentPort, threadId } from "node:worker_threads";
+
+// console.log("Worker Thread ID:", threadId);
+
+// console.time("Worker Fibonacci");
+// const result = fibonacci(45);
+// console.timeEnd("Worker Fibonacci");
+
+// if (parentPort != null) {
+//   parentPort.postMessage({
+//     threadId,
+//     result,
+//   });
+// }
+
+// function fibonacci(n: number): number {
+//   return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);
+// }

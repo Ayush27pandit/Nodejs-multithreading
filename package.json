@@ -1,6 +1,6 @@
 {
   "name": "backend-must",
-  "module": "index.ts",
+  "module": "multithreading.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
