@@ -1,7 +1,6 @@
 # Node.js Multithreading Through Image Processing
 
-This project demonstrates how to use **Node.js Worker Threads** to process images in parallel.  
-By offloading CPU-heavy operations (resize, blur, greyscale) to worker threads, we achieve a significant performance boost.
+This project demonstrates how to use **Node.js Worker Threads** to process images in parallel. By offloading CPU-heavy operations (resize, blur, greyscale) to worker threads, the main thread stays responsive and throughput improves.
 
 ---
 
@@ -44,29 +43,65 @@ Parallel execution nearly **doubles the performance**, while keeping the main th
 
 ## Project Structure
 
-assets/ # Input images
-worker-output/ # Output directory created automatically
-index.ts # Main thread - sends tasks to workers
-worker.ts # Worker thread - performs image operations
+Below is the repository structure in Markdown format. It reflects the current workspace layout and highlights important files and folders.
+
+```
+Nodejs-multithreading/
+├─ index.ts                 # Main thread (single-threaded processing / demo)
+├─ multithreading.ts        # Main thread that dispatches work to workers
+├─ worker.ts                # Worker thread implementation (image ops)
+├─ package.json             # Project metadata + scripts
+├─ tsconfig.json            # TypeScript configuration
+├─ README.md                # Project readme (this file)
+├─ assets/                  # Input files (images, test data)
+│  └─ hi.txt                # example asset
+├─ comparison-normal/       # Reference/expected outputs for comparison
+│  ├─ sample-image1/
+│  ├─ sample-image-2/
+│  └─ ...
+├─ normal-output/           # Output produced by single-thread (non-worker) run
+│  ├─ sample-image1/
+│  ├─ sample-image-2/
+│  └─ ...
+└─ worker-output/           # Output produced by worker-threaded run
+   ├─ sample-image1/
+   ├─ sample-image-2/
+   └─ ...
+```
+
+**Key files:**
+
+- `index.ts`: Main entry that runs processing without worker threads (useful for baseline benchmarks).
+- `multithreading.ts`: Entry that creates worker threads and distributes image processing tasks.
+- `worker.ts`: Worker implementation — receives tasks from the main thread and performs image operations.
+- `assets/`: Place input images here for processing.
+- `normal-output/` and `worker-output/`: Generated outputs for single-thread and multithread runs respectively.
 
 ---
 
-## 📦 Installation
+## Quick Start (PowerShell)
 
-```yaml
+- Install dependencies (if using `bun`):
+
+```powershell
 bun install
 ```
 
-## Running Project
+- Run the single-threaded demo:
 
-- Without worker
-
-```yaml
+```powershell
 bun index.ts
 ```
 
-- With worker threads(remember to change package.json module file)
+- Run the multithreaded demo:
 
-```yaml
+```powershell
 bun multithreading.ts
 ```
+
+Notes:
+
+- If you prefer `ts-node`/`node`, transpile or run with an appropriate runner (e.g., `ts-node`), or compile with `tsc` and run `node dist/index.js`.
+- Output directories (`normal-output/` and `worker-output/`) are created automatically by the scripts when needed.
+
+---
